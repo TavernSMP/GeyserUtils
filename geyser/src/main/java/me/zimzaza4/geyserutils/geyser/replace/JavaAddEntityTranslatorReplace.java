@@ -57,7 +57,7 @@ public class JavaAddEntityTranslatorReplace extends PacketTranslator<Clientbound
         }
 
         Vector3f position = Vector3f.from(packet.getX(), packet.getY(), packet.getZ());
-        Vector3f motion = Vector3f.from(packet.getMotionX(), packet.getMotionY(), packet.getMotionZ());
+        Vector3f motion = packet.getMotion() != null ? packet.getMotion() : Vector3f.ZERO;
         float yaw = packet.getYaw();
         float pitch = packet.getPitch();
         float headYaw = packet.getHeadYaw();
