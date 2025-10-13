@@ -55,6 +55,7 @@ import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.Clientbound
 import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundCustomPayloadPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundAddEntityPacket;
 import org.jetbrains.annotations.NotNull;
+import org.geysermc.geyser.entity.properties.type.PropertyType;
 
 import javax.imageio.ImageIO;
 import java.io.ByteArrayInputStream;
@@ -94,19 +95,19 @@ public class GeyserUtils implements Extension {
     }
 
     // the static here is crazy ;(
+    /**
+     * Hour Counter For Fixing This In Geyser update 12/10/2025
+     * NekoMonci12: 2 hours
+     */
     private static GeyserEntityProperties getProperties(String id) {
         if (!properties.containsKey(id)) return null;
 
         GeyserEntityProperties.Builder builder = new GeyserEntityProperties.Builder(id);
-        List<Map.Entry<String, PropertyType<?, ?>>> pairs = properties.get(id);
 
-        pairs.forEach(p -> {
-            try {
-                builder.add(p.getValue());
-            } catch (Exception e) {
-                instance.logger().info("Found unknown property: " + p.getKey());
-            }
-        });
+        List<PropertyType<?, ?>> list = properties.get(id);
+        for (PropertyType<?, ?> type : list) {
+            builder.add(type);
+        }
 
         return builder.build();
     }
@@ -585,11 +586,13 @@ public class GeyserUtils implements Extension {
             }
         } else if (customPacket instanceof EntityPropertyPacket entityPropertyPacket) {
             Entity entity = session.getEntityCache().getEntityByJavaId(entityPropertyPacket.getEntityId());
-            if (entity != null && entity.getPropertyManager() != null
-                    && entityPropertyPacket.getIdentifier() != null
-                    && entityPropertyPacket.getValue() != null) {
+            if (entity != null && entity.getPropertyManager() != null) {
+                PropertyType<?, ?> type = Registries.BEDROCK_ENTITY_PROPERTIES.get()
+                        .stream()
+                        .filter(t -> t.identifier().toString().equals(entityPropertyPacket.getIdentifier()))
+                        .findFirst()
+                        .orElse(null);
 
-                PropertyType<?, ?> type = Registries.BEDROCK_ENTITY_PROPERTIES.get().get(entityPropertyPacket.getIdentifier());
                 if (type != null) {
                     entity.getPropertyManager().add(type, entityPropertyPacket.getValue());
                     entity.updateBedrockEntityProperties();
