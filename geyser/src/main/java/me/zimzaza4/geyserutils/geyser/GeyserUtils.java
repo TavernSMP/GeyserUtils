@@ -74,7 +74,7 @@ public class GeyserUtils implements Extension {
 
 
     public static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
-    private static final Map<String, List<Map.Entry<String, Class<?>>>> properties = new HashMap<>();
+    private static final Map<String, List<PropertyType<?, ?>>> properties = new HashMap<>();
     @Getter
     public static PacketManager packetManager = new PacketManager();
     public static List<String> REGISTERED_ENTITIES = new ArrayList<>();
@@ -112,20 +112,17 @@ public class GeyserUtils implements Extension {
         return builder.build();
     }
 
-    private static boolean containsProperty(String entityId, String identifier) {
+    private static boolean containsProperty(String entityId, PropertyType<?, ?> type) {
         if (!properties.containsKey(entityId)) return false;
-
-        return properties.get(entityId).stream().anyMatch(p -> p.getKey().equalsIgnoreCase(identifier));
+        return properties.get(entityId).contains(type);
     }
 
-    public static void addProperty(String entityId, String identifier, Class<?> type) {
-        if (containsProperty(entityId, identifier)) return;
+    public static void addProperty(String entityId, PropertyType<?, ?> type) {
+        if (containsProperty(entityId, type)) return;
 
-        List<Map.Entry<String, Class<?>>> pairs = properties.getOrDefault(entityId, new ArrayList<>());
-        pairs.add(new AbstractMap.SimpleEntry<>(identifier, type));
-
-        if (properties.containsKey(entityId)) properties.replace(entityId, pairs);
-        else properties.put(entityId, pairs);
+        List<PropertyType<?, ?>> list = properties.getOrDefault(entityId, new ArrayList<>());
+        list.add(type);
+        properties.put(entityId, list);
     }
 
     public static void registerProperties(String entityId) {
@@ -139,15 +136,9 @@ public class GeyserUtils implements Extension {
 
         GeyserEntityProperties entityProperties = getProperties(entityId);
         if (entityProperties == null) return;
-        properties.values().stream()
-                .flatMap(List::stream)
-                .map(Map.Entry::getKey)
-                .forEach(id -> {
-                    Registries.BEDROCK_ENTITY_PROPERTIES.get().removeIf(i -> i.containsKey(id));
-                });
+        Registries.BEDROCK_ENTITY_PROPERTIES.get().removeIf(i -> i.identifier().toString().equals(entityId));
 
-
-        Registries.BEDROCK_ENTITY_PROPERTIES.get().add(entityProperties.toNbtMap(entityId));
+        Registries.BEDROCK_ENTITY_PROPERTIES.get().add(entityProperties);
 
         EntityDefinition old = LOADED_ENTITY_DEFINITIONS.get(entityId);
         LOADED_ENTITY_DEFINITIONS.replace(entityId, new EntityDefinition(
