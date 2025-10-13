@@ -100,10 +100,11 @@ public class GeyserUtils implements Extension {
         GeyserEntityProperties.Builder builder = new GeyserEntityProperties.Builder(id);
         List<Map.Entry<String, Class<?>>> pairs = properties.get(id);
         pairs.forEach(p -> {
-            if (p.getValue() == Boolean.class) builder.addBoolean(p.getKey());
-            else if (p.getValue() == Float.class) builder.addFloat(p.getKey());
-            else if (p.getValue() == Integer.class) builder.addInt(p.getKey());
-            else instance.logger().info("Found unknown property: " + p.getKey());
+            try {
+                builder.add(p.getKey(), p.getValue());
+            } catch (Exception e) {
+                instance.logger().info("Found unknown property: " + p.getKey());
+            }
         });
 
         return builder.build();
@@ -194,12 +195,18 @@ public class GeyserUtils implements Extension {
                 .putList("idlist", NbtType.COMPOUND, idList).build()
         );
 
-        EntityDefinition<Entity> def = EntityDefinition.builder(null)
-                .height(0.1f)
-                .width(0.1f)
-                .identifier(id)
-                .properties(getProperties(id))
-                .build();
+        GeyserEntityProperties builtProperties = builder.build();
+
+        EntityDefinition<Entity> def = new EntityDefinition<>(
+                factory,
+                type,
+                identifier,
+                width,
+                height,
+                offset,
+                builtProperties,
+                translators
+        );
 
         LOADED_ENTITY_DEFINITIONS.put(id, def);
     }
@@ -583,9 +590,9 @@ public class GeyserUtils implements Extension {
 
                 if (entity.getPropertyManager() == null) return;
                 if (entityPropertyPacket.getValue() instanceof Boolean value) {
-                    entity.getPropertyManager().add(entityPropertyPacket.getIdentifier(), value);
+                    entity.getPropertyManager().set(entityPropertyPacket.getIdentifier(), value);
                 } else if (entityPropertyPacket.getValue() instanceof Integer value) {
-                    entity.getPropertyManager().add(entityPropertyPacket.getIdentifier(), value);
+                    entity.getPropertyManager().set(entityPropertyPacket.getIdentifier(), value);
                 }
                 entity.updateBedrockEntityProperties();
             }
