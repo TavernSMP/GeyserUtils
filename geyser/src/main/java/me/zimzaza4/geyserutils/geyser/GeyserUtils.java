@@ -100,10 +100,17 @@ public class GeyserUtils implements Extension {
         GeyserEntityProperties.Builder builder = new GeyserEntityProperties.Builder(id);
         List<Map.Entry<String, Class<?>>> pairs = properties.get(id);
         pairs.forEach(p -> {
-            try {
-                builder.add(p.getKey(), p.getValue());
-            } catch (Exception e) {
-                instance.logger().info("Found unknown property: " + p.getKey());
+            String key = p.getKey();
+            Class<?> valueClass = p.getValue();
+
+            if (valueClass == Boolean.class) {
+                builder.add(PropertyType.BOOLEAN, key);
+            } else if (valueClass == Float.class) {
+                builder.add(PropertyType.FLOAT, key);
+            } else if (valueClass == Integer.class) {
+                builder.add(PropertyType.INT, key);
+            } else {
+                instance.logger().info("Found unknown property: " + key);
             }
         });
 
