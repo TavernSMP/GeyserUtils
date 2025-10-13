@@ -98,19 +98,13 @@ public class GeyserUtils implements Extension {
         if (!properties.containsKey(id)) return null;
 
         GeyserEntityProperties.Builder builder = new GeyserEntityProperties.Builder(id);
-        List<Map.Entry<String, Class<?>>> pairs = properties.get(id);
-        pairs.forEach(p -> {
-            String key = p.getKey();
-            Class<?> valueClass = p.getValue();
+        List<Map.Entry<String, PropertyType<?, ?>>> pairs = properties.get(id);
 
-            if (valueClass == Boolean.class) {
-                builder.add(PropertyType.BOOLEAN, key);
-            } else if (valueClass == Float.class) {
-                builder.add(PropertyType.FLOAT, key);
-            } else if (valueClass == Integer.class) {
-                builder.add(PropertyType.INT, key);
-            } else {
-                instance.logger().info("Found unknown property: " + key);
+        pairs.forEach(p -> {
+            try {
+                builder.add(p.getValue());
+            } catch (Exception e) {
+                instance.logger().info("Found unknown property: " + p.getKey());
             }
         });
 
@@ -591,17 +585,17 @@ public class GeyserUtils implements Extension {
             }
         } else if (customPacket instanceof EntityPropertyPacket entityPropertyPacket) {
             Entity entity = session.getEntityCache().getEntityByJavaId(entityPropertyPacket.getEntityId());
-            if (entity != null) {
-                if (entityPropertyPacket.getIdentifier() == null
-                        || entityPropertyPacket.getValue() == null) return;
+            if (entity != null && entity.getPropertyManager() != null
+                    && entityPropertyPacket.getIdentifier() != null
+                    && entityPropertyPacket.getValue() != null) {
 
-                if (entity.getPropertyManager() == null) return;
-                if (entityPropertyPacket.getValue() instanceof Boolean value) {
-                    entity.getPropertyManager().set(entityPropertyPacket.getIdentifier(), value);
-                } else if (entityPropertyPacket.getValue() instanceof Integer value) {
-                    entity.getPropertyManager().set(entityPropertyPacket.getIdentifier(), value);
+                PropertyType<?, ?> type = Registries.BEDROCK_ENTITY_PROPERTIES.get().get(entityPropertyPacket.getIdentifier());
+                if (type != null) {
+                    entity.getPropertyManager().add(type, entityPropertyPacket.getValue());
+                    entity.updateBedrockEntityProperties();
+                } else {
+                    instance.logger().info("Unknown property type: " + entityPropertyPacket.getIdentifier());
                 }
-                entity.updateBedrockEntityProperties();
             }
         } else if (customPacket instanceof EntityPropertyRegisterPacket entityPropertyRegisterPacket) {
             if (entityPropertyRegisterPacket.getIdentifier() == null
