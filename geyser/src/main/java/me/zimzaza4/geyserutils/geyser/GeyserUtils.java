@@ -181,27 +181,34 @@ public class GeyserUtils implements Extension {
                 .putString("bid", "")
                 .putBoolean("hasspawnegg", false)
                 .putInt("rid", idList.size() + 1)
-                .putBoolean("summonable", false).build()
+                .putBoolean("summonable", false)
+                .build()
         );
 
         Registries.BEDROCK_ENTITY_IDENTIFIERS.set(NbtMap.builder()
-                .putList("idlist", NbtType.COMPOUND, idList).build()
+                .putList("idlist", NbtType.COMPOUND, idList)
+                .build()
         );
 
-        GeyserEntityProperties builtProperties = builder.build();
+        GeyserEntityProperties builtProperties = getProperties(id);
+        if (builtProperties == null) return;
 
-        EntityDefinition<Entity> def = new EntityDefinition<>(
-                factory,
-                type,
-                identifier,
-                width,
-                height,
-                offset,
+        EntityDefinition old = LOADED_ENTITY_DEFINITIONS.get(id);
+        if (old == null) {
+            instance.logger().warning("No base entity definition found for " + id);
+            return;
+        }
+
+        LOADED_ENTITY_DEFINITIONS.put(id, new EntityDefinition<>(
+                old.factory(),
+                old.entityType(),
+                old.identifier(),
+                old.width(),
+                old.height(),
+                old.offset(),
                 builtProperties,
-                translators
-        );
-
-        LOADED_ENTITY_DEFINITIONS.put(id, def);
+                old.translators()
+        ));
     }
 
     @NotNull
