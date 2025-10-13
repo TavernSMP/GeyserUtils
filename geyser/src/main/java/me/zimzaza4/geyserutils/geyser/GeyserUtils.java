@@ -112,9 +112,9 @@ public class GeyserUtils implements Extension {
         return builder.build();
     }
 
-    private static boolean containsProperty(String entityId, PropertyType<?, ?> type) {
+    private static boolean containsProperty(String entityId, String propertyName) {
         if (!properties.containsKey(entityId)) return false;
-        return properties.get(entityId).contains(type);
+        return properties.get(entityId).stream().anyMatch(p -> p.name().equals(propertyName));
     }
 
     public static void addProperty(String entityId, PropertyType<?, ?> type) {
@@ -136,7 +136,7 @@ public class GeyserUtils implements Extension {
 
         GeyserEntityProperties entityProperties = getProperties(entityId);
         if (entityProperties == null) return;
-        Registries.BEDROCK_ENTITY_PROPERTIES.get().removeIf(i -> i.identifier().toString().equals(entityId));
+        Registries.BEDROCK_ENTITY_PROPERTIES.get().removeIf(i -> i.name().equals(entityId));
 
         Registries.BEDROCK_ENTITY_PROPERTIES.get().add(entityProperties);
 
@@ -587,7 +587,7 @@ public class GeyserUtils implements Extension {
             if (entity != null && entity.getPropertyManager() != null) {
                 PropertyType<?, ?> type = Registries.BEDROCK_ENTITY_PROPERTIES.get()
                         .stream()
-                        .filter(t -> t.identifier().toString().equals(entityPropertyPacket.getIdentifier()))
+                        .filter(t -> t.name().equals(entityPropertyPacket.getIdentifier()))
                         .findFirst()
                         .orElse(null);
 
@@ -608,10 +608,10 @@ public class GeyserUtils implements Extension {
                 if (def == null) return;
 
                 if (!containsProperty(def, entityPropertyRegisterPacket.getIdentifier())) {
-                    PropertyType<?, ?> propertyType = PropertyType.builder(
+                    PropertyType<Object, Object> propertyType = PropertyType.create(
                             entityPropertyRegisterPacket.getIdentifier(),
-                            entityPropertyRegisterPacket.getType()
-                    ).build();
+                            Object.class
+                    );
 
                     addProperty(def, propertyType);
                     registerProperties(def);
