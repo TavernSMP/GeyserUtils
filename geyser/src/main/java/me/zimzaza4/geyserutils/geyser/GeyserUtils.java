@@ -608,8 +608,12 @@ public class GeyserUtils implements Extension {
                 if (def == null) return;
 
                 if (!containsProperty(def, entityPropertyRegisterPacket.getIdentifier())) {
-                    addProperty(def, entityPropertyRegisterPacket.getIdentifier(), entityPropertyRegisterPacket.getType());
+                    PropertyType<?, ?> propertyType = PropertyType.builder(
+                            entityPropertyRegisterPacket.getIdentifier(),
+                            entityPropertyRegisterPacket.getType()
+                    ).build();
 
+                    addProperty(def, propertyType);
                     registerProperties(def);
                     logger().info("DEF PROPERTIES: " + entityPropertyRegisterPacket.getIdentifier());
                 }
