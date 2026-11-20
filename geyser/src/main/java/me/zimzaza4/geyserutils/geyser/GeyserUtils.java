@@ -481,7 +481,7 @@ public class GeyserUtils implements Extension {
                     if (packet instanceof ClientboundCustomPayloadPacket payloadPacket) {
                         if (ReflectionUtils.getChannel(payloadPacket).toString().equals(GeyserUtilsChannels.MAIN)) {
                             CustomPayloadPacket customPacket = packetManager.decodePacket(payloadPacket.getData());
-                            handleCustomPacket(session, customPacket);
+                            TavernThreadHop.handle(GeyserUtils.this, session, customPacket);
                         }
                     }
                 }
@@ -489,7 +489,7 @@ public class GeyserUtils implements Extension {
         }, 80, TimeUnit.MILLISECONDS);
     }
 
-    private void handleCustomPacket(GeyserSession session, CustomPayloadPacket customPacket) {
+    void handleCustomPacket(GeyserSession session, CustomPayloadPacket customPacket) {
         if (customPacket instanceof BundlePacket bundlePacket) {
             bundlePacket.getPackets().forEach(p -> handleCustomPacket(session, p));
         } else if (customPacket instanceof CameraShakeCustomPayloadPacket cameraShakePacket) {
